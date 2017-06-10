@@ -36,9 +36,9 @@ $ res publish . bin-release/web/<版本号>    # 发布资源
 function runEgret (e) {
   if (e.type) {
     switch (e.type) {
-      case 'cached':
-      case 'noupdate':
-      case 'updateready':
+      case 'cached':        // 第一次下载完毕
+      case 'noupdate':      // 不需要更新缓存
+      case 'updateready':   // 更新缓存完毕
         egret.runEgret({renderMode: "webgl", audioType: 0, retina: true})
         break
     }
@@ -82,7 +82,7 @@ text/cache-manifest                   appcache;
 客户端在请求没有散列值后缀的文件时, 使用 `FALLBACK:`
 表项可以让客户端重定向到其相应的文件, 实现缓存读取.
 
-appcache 文件例子
+- appcache 文件例子:
 
 ```
 CACHE MANIFEST
