@@ -33,21 +33,27 @@ $ res publish . bin-release/web/<版本号>    # 发布资源
 `href` 请求的是没有带散列值后缀的文件, 所以缓存没有下载完成时会 404.
 
 ```js
+let appCache = window.applicationCache
+// 三个事件分别为: 第一次缓存下载完成, 缓存无需更新, 以及缓存更新完成
+let readyStates = ['cached', 'noupdate', 'updateready']
+
+readyStates.forEach(s => {
+  appCache.addEventListener(s, runEgret, false)
+})
+
 function runEgret (e) {
-  if (e.type) {
-    switch (e.type) {
-      case 'cached':        // 第一次下载完毕
-      case 'noupdate':      // 不需要更新缓存
-      case 'updateready':   // 更新缓存完毕
-        egret.runEgret({renderMode: "webgl", audioType: 0, retina: true})
-        break
-    }
+  if (e.type && readyStates.includes(e.type)) {
+    egret.runEgret({renderMode: "webgl", audioType: 0, retina: true})
+    removeCacheListeners() // Egret 已在运行, 可以异步操作
   }
 }
 
-window.applicationCache.addEventListener('cached', runEgret, false)
-window.applicationCache.addEventListener('noupdate', runEgret, false)
-window.applicationCache.addEventListener('updateready', runEgret, false)
+// 删除未来不必要的事件监听器.
+function removeCacheListeners () {
+  readyStates.forEach(s => {
+    appCache.removeEventListener(s, runEgret, false)
+  })
+}
 ```
 
 - 配置服务器的时候, 虽然在我的 Chrome 59 上默认配置是可行的,
@@ -69,14 +75,18 @@ text/cache-manifest                   appcache;
     text/cache-manifest                   appcache;
 ```
 
-- 需要注意的是, 在 Nginx 中服务 appcache 这个静态文件是默认没有 `Cache-Control`
-头的, 需要服务器缓存控制的话, 只需要更改静态文件的超时规则即可, 可以参考
-[Nginx Caching](https://serversforhackers.com/nginx-caching)
+- 需要注意的是, 在 Nginx 中服务 appcache 这个静态文件是默认没有缓存, 以及
+ `Cache-Control` 头的, 需要服务器缓存控制的话, 只需要更改静态文件的超时规则即可,
+可以参考 [Nginx Caching](https://serversforhackers.com/nginx-caching)
 
 ```
 location ~* \.(?:manifest|appcache)$ {
   expires -1;   # 服务器不缓存 (推荐)
   # expires 1h; # 缓存, 1 小时后超时
+
+  # 如果需要缓存, 需要判断缓存内容是否涉及 登录/授权 等私人数据, "public"
+  # 选项适合非私有的静态内容的缓存.
+  # add_header Cache-Control "public"
 }
 ```
 
