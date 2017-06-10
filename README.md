@@ -69,6 +69,17 @@ text/cache-manifest                   appcache;
     text/cache-manifest                   appcache;
 ```
 
+- 需要注意的是, 在 Nginx 中服务 appcache 这个静态文件是默认没有 `Cache-Control`
+头的, 需要服务器缓存控制的话, 只需要更改静态文件的超时规则即可, 可以参考
+[Nginx Caching](https://serversforhackers.com/nginx-caching)
+
+```
+location ~* \.(?:manifest|appcache)$ {
+  expires -1;   # 服务器不缓存 (推荐)
+  # expires 1h; # 缓存, 1 小时后超时
+}
+```
+
 - 注: 根据
 [Using the application cache](https://developer.mozilla.org/en-US/docs/Web/HTML/Using_the_application_cache),
 该标准已经是 *deprecated* 状态, 但是
